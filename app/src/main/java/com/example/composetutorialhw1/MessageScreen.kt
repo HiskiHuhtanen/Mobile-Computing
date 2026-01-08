@@ -14,6 +14,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Spacer
@@ -32,15 +33,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.composetutorialhw1.ui.theme.ComposeTutorialHW1Theme
 import kotlinx.serialization.Serializable
 
 @Serializable
 object MessagesRoute
 data class Message(val author: String, val body: String)
 
+//how to stop scaffold from getting in the way
+//https://slack-chats.kotlinlang.org/t/16382445/when-i-use-scaffold-it-draws-over-my-existing-composable-i-w
+//https://developer.android.com/develop/ui/compose/components/scaffold#example
+
 @Composable
-fun Conversations(messages: List<Message>) {
-    LazyColumn {
+fun Conversations(messages: List<Message>, modifier: Modifier = Modifier) {
+    LazyColumn(
+        modifier = modifier
+    ) {
         items(messages) { message ->
             MessagesCard(message)
         }
@@ -97,5 +105,12 @@ fun MessagesCard(msg: Message) {
             }
         }
     }
+}
 
+@Preview
+@Composable
+fun PreviewConversations() {
+    ComposeTutorialHW1Theme() {
+        Conversations(SampleData.conversationSample)
+    }
 }
