@@ -14,7 +14,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Spacer
@@ -23,11 +22,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -106,11 +116,56 @@ fun MessagesCard(msg: Message) {
         }
     }
 }
-
-@Preview
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PreviewConversations() {
-    ComposeTutorialHW1Theme() {
-        Conversations(SampleData.conversationSample)
+fun MessagesScreen(
+    initialMessages: List<Message>,
+    onBack: () -> Unit
+) {
+    var messages by remember { mutableStateOf(initialMessages) }
+    var input by rememberSaveable { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = { Text("Messages") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        },
+        bottomBar = { //https://developer.android.com/develop/ui/compose/quick-guides/content/display-bottom-app-bar
+            BottomAppBar {
+                TextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    //modifier = Modifier.weight(1f).padding(start = 8.dp),
+                    placeholder = { Text("Send a message…") },
+                )
+                IconButton(
+                    onClick = {
+                            messages = messages + Message(author = "TEMP", body = input
+                            )
+                            input = ""
+                    }
+                ) {
+                    Icon(Icons.Default.Send, contentDescription = "Send")
+                }
+            }
+        }
+    ) { innerPadding ->
+        Conversations(
+            messages = messages,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 }
