@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ComposeTutorialHW1Theme {
                 val navController = rememberNavController()
+                val userViewModel: UserViewModel = viewModel()
                 NavHost(
                     navController = navController,
                     startDestination = ScreenA

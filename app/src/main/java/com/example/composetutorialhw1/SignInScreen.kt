@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import kotlinx.serialization.Serializable
 
 
@@ -50,5 +51,15 @@ fun UserNameInput(onSignInClick: (String) -> Unit = {}, modifier: Modifier) {
         ) {
             Text("Set Username")
         }
+    }
+}
+
+
+class UserName : ViewModel() {
+    var username by mutableStateOf("")
+        private set
+
+    fun setUsername(name: String) {
+        username = name
     }
 }

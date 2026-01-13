@@ -43,9 +43,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.composetutorialhw1.ui.theme.ComposeTutorialHW1Theme
 import kotlinx.serialization.Serializable
 
+import com.example.composetutorialhw1.SignInScreen
 @Serializable
 object MessagesRoute
 data class Message(val author: String, val body: String)
@@ -118,13 +120,12 @@ fun MessagesCard(msg: Message) {
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessagesScreen(
-    initialMessages: List<Message>,
-    onBack: () -> Unit
+fun MessagesScreen(initialMessages: List<Message>, onBack: () -> Unit,
 ) {
     var messages by remember { mutableStateOf(initialMessages) }
     var input by rememberSaveable { mutableStateOf("") }
 
+    val username = viewModel.username
     Scaffold(
         topBar = {
             TopAppBar(
@@ -153,7 +154,7 @@ fun MessagesScreen(
                 )
                 IconButton(
                     onClick = {
-                            messages = messages + Message(author = "TEMP", body = input
+                            messages = messages + Message(author = username, body = input
                             )
                             input = ""
                     }
