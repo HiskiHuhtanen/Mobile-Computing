@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,13 +24,16 @@ import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.room.Room
 
 import com.example.composetutorialhw1.ui.theme.ComposeTutorialHW1Theme
 import kotlinx.serialization.Serializable
+import java.io.File
 
 
 //navigation tutorial
@@ -40,11 +42,30 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        //ingenious solution
+        val evenFile = File(filesDir, "profilepic_even.png")
+        val oddFile = File(filesDir, "profilepic_odd.png")
+        when {
+            evenFile.exists() -> {
+                User.evenPic = true
+                User.profilePic.value = evenFile.toUri()
+            }
+            oddFile.exists() -> {
+                User.evenPic = false
+                User.profilePic.value = oddFile.toUri()
+            }
+        }
         enableEdgeToEdge()
         setContent {
             ComposeTutorialHW1Theme {
                 val navController = rememberNavController()
-                val userViewModel: UserViewModel = viewModel()
+
+                val db = Room.databaseBuilder(
+                    applicationContext,
+                    AppDatabase::class.java, "database-name"
+                ).build()
+
                 NavHost(
                     navController = navController,
                     startDestination = ScreenA
@@ -116,7 +137,7 @@ class MainActivity : ComponentActivity() {
                     //https://developer.android.com/develop/ui/compose/components/app-bars-navigate
                     composable<MessagesRoute> {
                         MessagesScreen(
-                            initialMessages = SampleData.conversationSample,
+                            messageDao = db.messageDao(),
                             onBack = { navController.navigateUp() }
                         )
                     }

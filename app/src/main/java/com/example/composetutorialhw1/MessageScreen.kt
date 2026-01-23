@@ -4,14 +4,11 @@ package com.example.composetutorialhw1
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -34,30 +31,31 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.composetutorialhw1.ui.theme.ComposeTutorialHW1Theme
+import coil3.compose.AsyncImage
 import kotlinx.serialization.Serializable
 
-import com.example.composetutorialhw1.SignInScreen
+import kotlinx.coroutines.launch
+
 @Serializable
 object MessagesRoute
-data class Message(val author: String, val body: String)
+//data class Message(val author: String, val body: String)
 
 //how to stop scaffold from getting in the way
 //https://slack-chats.kotlinlang.org/t/16382445/when-i-use-scaffold-it-draws-over-my-existing-composable-i-w
 //https://developer.android.com/develop/ui/compose/components/scaffold#example
 
 @Composable
-fun Conversations(messages: List<Message>, modifier: Modifier = Modifier) {
+fun Conversations(messages: List<MessageData>, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier
     ) {
@@ -69,19 +67,18 @@ fun Conversations(messages: List<Message>, modifier: Modifier = Modifier) {
 //speed
 //https://stackoverflow.com/questions/70592694/laggy-lazy-column-android-compose
 @Composable
-fun MessagesCard(msg: Message) {
+fun MessagesCard(msg: MessageData) {
+
+    val profilePicUri = User.profilePic.value
     //Padding
     Row(modifier = Modifier.padding(all = 8.dp)) {
-        Image(
-            painter = painterResource(R.drawable.linkedin),
+        //USED TO BE IMAGE NOW NOT, BECAUSE WE CAN SET IT
+        AsyncImage(
+            model = profilePicUri ?: R.drawable.defaultprofilepic,
             contentDescription = "Contact profile picture",
-            //missing from tutorial
-            //https://developer.android.com/develop/ui/compose/graphics/images/customize
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                //image size 40dp
                 .size(40.dp)
-                //Clip to circle
                 .clip(CircleShape)
                 .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
         )
@@ -97,7 +94,7 @@ fun MessagesCard(msg: Message) {
         //toggle the isExpanded variable when clicked on collider
         Column(modifier = Modifier.clickable { isExpanded = !isExpanded}) {
             Text(
-                text = msg.author,
+                text = msg.author ?: "",
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )
@@ -109,7 +106,7 @@ fun MessagesCard(msg: Message) {
                 color = surfaceColor,
                 modifier = Modifier.animateContentSize().padding(1.dp)) {
                 Text(
-                    text = msg.body,
+                    text = msg.text ?: "",
                     modifier = Modifier.padding(all = 4.dp),
                     maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                     style = MaterialTheme.typography.bodyMedium
@@ -118,14 +115,28 @@ fun MessagesCard(msg: Message) {
         }
     }
 }
+
+//A LOT FROM THE ANDROID STUDIO DOCUMENTATION
+//PROBLEMS!!!:
+//-SEND MESSAGE BUTTON IS NOT STILL
+//-CAN SEND EMPTY MESSAGES
+//-CAN SEND MESSAGES WITHOUT USENAME <- "fix" make username be "Blank" normally
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessagesScreen(initialMessages: List<Message>, onBack: () -> Unit,
-) {
-    var messages by remember { mutableStateOf(initialMessages) }
+fun MessagesScreen(onBack: () -> Unit, messageDao: MessageDao, ) {
+
+    //https://developer.android.com/training/data-storage/room
+    var messages by remember { mutableStateOf<List<MessageData>>(emptyList()) }
     var input by rememberSaveable { mutableStateOf("") }
 
-    val username = viewModel.username
+    val username = User.username.value
+    val scope = rememberCoroutineScope()
+
+    //https://www.youtube.com/watch?v=mNKQ9dc1knI
+    LaunchedEffect(Unit) {
+        messages = messageDao.getAll()
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -144,6 +155,7 @@ fun MessagesScreen(initialMessages: List<Message>, onBack: () -> Unit,
                 }
             )
         },
+        //NEW MESSAGE
         bottomBar = { //https://developer.android.com/develop/ui/compose/quick-guides/content/display-bottom-app-bar
             BottomAppBar {
                 TextField(
@@ -152,11 +164,14 @@ fun MessagesScreen(initialMessages: List<Message>, onBack: () -> Unit,
                     //modifier = Modifier.weight(1f).padding(start = 8.dp),
                     placeholder = { Text("Send a message…") },
                 )
-                IconButton(
+                IconButton( //https://developer.android.com/training/data-storage/room
                     onClick = {
-                            messages = messages + Message(author = username, body = input
-                            )
-                            input = ""
+                            val newMessage = MessageData(author = username, text = input)
+                            scope.launch {
+                                messageDao.insertMessage(newMessage)
+                                messages = messageDao.getAll()
+                            }
+                        input = ""
                     }
                 ) {
                     Icon(Icons.Default.Send, contentDescription = "Send")
