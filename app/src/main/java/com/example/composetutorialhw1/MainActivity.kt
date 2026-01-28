@@ -1,5 +1,10 @@
 package com.example.composetutorialhw1
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,9 +26,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -42,7 +49,6 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         //ingenious solution
         val evenFile = File(filesDir, "profilepic_even.png")
         val oddFile = File(filesDir, "profilepic_odd.png")
@@ -64,7 +70,19 @@ class MainActivity : ComponentActivity() {
                 val db = Room.databaseBuilder(
                     applicationContext,
                     AppDatabase::class.java, "database-name"
-                ).build()
+                )
+                    .enableMultiInstanceInvalidation() //I am so grateful for the Android devs
+                    .build()
+                //If your app runs in multiple processes, include enableMultiInstanceInvalidation() in your database builder invocation.
+                // That way, when you have an instance of AppDatabase in each process, you can invalidate the shared database file in one process,
+                // and this invalidation automatically propagates to the instances of AppDatabase within other processes.
+
+                LaunchedEffect(Unit) {
+                    val intent = Intent(this@MainActivity, CatFactService::class.java).apply {
+                        action = CatFactService.Actions.START.name
+                    }
+                    ContextCompat.startForegroundService(this@MainActivity, intent)
+                }
 
                 NavHost(
                     navController = navController,
@@ -96,7 +114,7 @@ class MainActivity : ComponentActivity() {
                             Button(onClick = {
                                 navController.navigate(SignInScreen)
                             }) {
-                                Text("Sign in")
+                                Text("Settings")
                             }
                         }
                     }

@@ -31,7 +31,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,16 +128,17 @@ fun MessagesCard(msg: MessageData) {
 fun MessagesScreen(onBack: () -> Unit, messageDao: MessageDao, ) {
 
     //https://developer.android.com/training/data-storage/room
-    var messages by remember { mutableStateOf<List<MessageData>>(emptyList()) }
+    val messages by messageDao.getAllUpdates().collectAsState(initial = emptyList())
     var input by rememberSaveable { mutableStateOf("") }
 
     val username = User.username.value
     val scope = rememberCoroutineScope()
 
-    //https://www.youtube.com/watch?v=mNKQ9dc1knI
-    LaunchedEffect(Unit) {
-        messages = messageDao.getAll()
-    }
+//    //https://www.youtube.com/watch?v=mNKQ9dc1knI
+//    LaunchedEffect(Unit) {
+//        messages = messageDao.getAll()
+//    }
+
     
     Scaffold(
         topBar = {
@@ -166,10 +169,19 @@ fun MessagesScreen(onBack: () -> Unit, messageDao: MessageDao, ) {
                 )
                 IconButton( //https://developer.android.com/training/data-storage/room
                     onClick = {
+                            val userText = input.trim()
                             val newMessage = MessageData(author = username, text = input)
                             scope.launch {
                                 messageDao.insertMessage(newMessage)
-                                messages = messageDao.getAll()
+                                val symbol = checkUserInput(userText)   //pretty bad, should move this out of here
+                                if (symbol != null) {
+                                    val reply = if(checkIfStockExists(symbol)) {
+                                        lookUpStock(symbol)
+                                    } else {
+                                        "Uuuh, dunno about that"
+                                    }
+                                    messageDao.insertMessage(MessageData(author = "StockBot", text = reply))
+                                }
                             }
                         input = ""
                     }
